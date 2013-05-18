@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta http-equiv="Content-Type"
+            content="text/html; charset=UTF-8" />
+<title>CiNii Coauthor Network</title> 
+<link href="bootstrap/css/bootstrap.css" rel="stylesheet">
+<link href="bootstrap/css/style.css" rel="stylesheet">
+<link href="bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+<script src="http://code.jquery.com/jquery-1.8.0.min.js"></script>
+<script src="bootstrap/js/bootstrap.min.js"></script>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<body>
+
+  <div class="container">
+  <form method="post" action="/" class="form-horizontal">
+            <div class="control-group">
+            <label class="control-label" for="email">検索語を入力してください</label>
+            <input type="text" name="words" />
+            <input type="submit" value="送信" class="btn btn-primary btn-mini"/>
+        　　　</div>
+        </form>
+
+ <hr>
+ <p>検索語は{{words}}です</p>
+ <p>分析対象論文数 : {{searchresult}}</p>
+　{% for list in articlenumber %}
+    <p>論文数{{ forloop.counter }} : {{ list.author }}: {{ list.val }}</p>
+ {% endfor %}
+ <p>著者数の平均 : {{means}}</p>
+ <p>共著者数の中央値 : {{midian}}</p>
+ <p>共著者数の最頻値(頻度) : {{mode.mode}} ({{mode.val}})</p>
+ {% for list in coauthornumber %}
+    <p>共著者数{{ forloop.counter }} : {{ list.author }}: {{ list.coauthornum }}</p>
+ {% endfor %}
+
+ </div>
+<script>
+
+var graph = {{json|safe}};
+
+var width = 800;
+var height = 600;
+var vbox_x = 0;
+var vbox_y = 0;
+var vbox_default_width = vbox_width = 1000;
+var vbox_default_height = vbox_height = 800;
+    
+
+var color = d3.scale.category20();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", "" + vbox_x + " " + vbox_y + " " + vbox_width + " " + vbox_height);
+
+var force = d3.layout.force()
+    .charge(-240)
+    .linkDistance(120)
+    .size([width, height]);
+
+force
+    .nodes(graph.nodes)
+    .links(graph.links)
+    .start();
+
+var link = svg.selectAll(".link")
+    .data(graph.links)
+    .enter().append("line")
+    .attr("class", "link")
+    .style("stroke-width", function(d) { return Math.sqrt(d.weight); })
+    .style("stroke","#999");
+
+ var elm=svg.selectAll(".nodes")
+ .data(graph.nodes)
+ 
+ var elment=elm.enter()
+ .append("g")
+ .call(force.drag);
+ 
+  var node =elment
+    .append("circle")
+      .attr("r", function(d){return Math.sqrt(d.viz.size)*10;})
+      .attr("class", "node")
+      .style("fill", function(d) { return color(d.viz.size); });
+  node.append("title")
+      .text(function(d) { return d.id; });
+  var text=elment.append("text")
+  .text(function(d){if (d.viz.size>1)return d.id})
+  .attr("font-size","0.5em"); 
+
+force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+    .attr("y1", function(d) { return d.source.y; })
+    .attr("x2", function(d) { return d.target.x; })
+    .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("cx", function(d) { return d.x; })
+    .attr("cy", function(d) { return d.y; });
+
+    text.attr("dx", function(d) { return d.x-15; })
+    .attr("dy", function(d) { return d.y+1; });
+
+});
+
+ drag = d3.behavior.drag().on("drag", function(d) {
+    vbox_x -= d3.event.dx;
+    vbox_y -= d3.event.dy;
+    return svg.attr("translate", "" + vbox_x + " " + vbox_y); //基点の調整。svgタグのtranslate属性を更新
+  });
+  svg.call(drag);
+
+zoom = d3.behavior.zoom().on("zoom", function(d) {
+    var befere_vbox_width, before_vbox_height, d_x, d_y;
+    befere_vbox_width = vbox_width;
+    before_vbox_height = vbox_height;
+    vbox_width = vbox_default_width * d3.event.scale;
+    vbox_height = vbox_default_height * d3.event.scale;
+    d_x = (befere_vbox_width - vbox_width) / 2;
+    d_y = (before_vbox_height - vbox_height) / 2;
+    vbox_x += d_x;
+    vbox_y += d_y;
+    return svg.attr("viewBox", "" + vbox_x + " " + vbox_y + " " + vbox_width + " " + vbox_height);  //svgタグのviewBox属性を更新
+});
+ 
+svg.call(zoom);   
+
+</script>
+
+
+</body>
+</html>
