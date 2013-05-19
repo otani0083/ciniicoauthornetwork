@@ -24,7 +24,7 @@ import xml.etree.ElementTree as ET
 import json,re,urllib,urllib2
 
 def cinii_search(query,result=[],start=0,limit=1000):
-    api_key="&X6QHqqF2Ah0laWpLmysP"
+    api_key=""
     cinii_url="http://ci.nii.ac.jp/opensearch/search?count=200&format=rss&q="
     start=start
     query=query
