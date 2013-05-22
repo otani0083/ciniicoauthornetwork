@@ -34,7 +34,21 @@
 </div>
 <div id="static" class="span3">
 <h2>統計</h2>
-
+ <p>検索語は{{words}}です</p>
+ <p><a href={{search_url|safe}}>CiNii Articles検索結果</a></p>
+ <p>分析対象論文数 : {{searchresult}}</p>
+　{% for list in articlenumber %}
+    <p>論文数{{ forloop.counter }} : {{ list.author }}: {{ list.val }}</p>
+ {% endfor %}
+ <p>著者数の平均 : {{means}}</p>
+ <p>著者数の標準偏差 : {{variance}}</p>
+ <p>共著者数の中央値 : {{midian}}</p>
+ <p>共著者数の最頻値(頻度) : {{mode.mode}} ({{mode.val}})</p>
+ {% for list in coauthornumber %}
+    <p>共著者数{{ forloop.counter }} : {{ list.author }}: {{ list.coauthornum }}</p>
+ {% endfor %}
+ <p>接続されたネットワークの数 : {{clique}}</p>
+ <p>最も大きなネットワークのノード数 : {{maxclique}}</p>
 </div>
 
 </div>

@@ -1,0 +1,58 @@
+<style type="text/css">
+body{
+
+}
+
+.num{
+   text-align: left;
+}
+html,
+      body {
+        height: 100%;
+        background-color:  
+      }
+
+#wrap {
+        min-height: 100%;
+        height: auto !important;
+        height: 100%;
+        /* Negative indent footer by it's height */
+        margin: 0 auto -60px;
+      }
+.container{
+    padding-bottom: 60px;
+    
+}
+#footer {
+        background-color: #f5f5f5;
+        text-align: center;
+        height: 60px;
+        line-height:60px
+      }
+#static{
+    padding-left: px;
+}
+#svg{
+    width: 800px;
+    height:500px;
+}
+
+h2{  
+    font-size: 1.5em;
+    border-top:1px solid #ccc;  
+    border-bottom:1px solid #ccc;  
+    padding:.1.5em .1.5em  }
+svg{
+    border: solid 2px #ccc;
+}
+
+#warning{
+    padding-top: 20px;
+    list-style-type: none;
+}
+#warning b{
+    color:red;
+}
+#main{
+    margin-top: 20px;
+}

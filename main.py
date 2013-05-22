@@ -17,6 +17,7 @@
 #
 import webapp2
 import os
+import math
 import networkx as nx
 from google.appengine.ext.webapp import template
 from networkx.readwrite import json_graph
@@ -24,13 +25,15 @@ import xml.etree.ElementTree as ET
 import json,re,urllib,urllib2
 
 def cinii_search(query,result=[],start=0,limit=1000):
-    api_key=""
+    api_key="&X6QHqqF2Ah0laWpLmysP"
     cinii_url="http://ci.nii.ac.jp/opensearch/search?count=200&format=rss&q="
+    rurl="http://ci.nii.ac.jp/opensearch/search?count=200&q="
     start=start
     query=query
     limit=limit
     urlquery=urllib.quote_plus(query)
     search_url=cinii_url+urlquery+"&start="+str(start)+api_key
+    rurl=rurl+urlquery+"&start="+str(start)+api_key
     url=urllib2.urlopen(search_url)
     tree= ET.parse(url)
     root = tree.getroot()
@@ -41,7 +44,7 @@ def cinii_search(query,result=[],start=0,limit=1000):
     if limit>start and result_number>start:
         cinii_search(query,result, start)
         # time.sleep(3)
-    return result
+    return result,str(rurl)
 
 def replacespace(wordlist):
     regex = re.compile(ur"[ 　]+")#空白文字列の削除
@@ -123,6 +126,12 @@ def networkanalysis(g,authornumber,wd):
             authorcount[i]+=1
         else:
             authorcount[i]=1
+    mean=a/len(authornumber)
+    s=0.0
+    for i in authornumber:
+        s+=(i-mean)**2
+    variance=round(math.sqrt((s/len(authornumber))),2)
+
     means=round(a/len(authornumber),2)
     mode={}
     coauthornumber=[]
@@ -132,33 +141,48 @@ def networkanalysis(g,authornumber,wd):
     if len(authornumber)%2==0:  
         midian=(authornumber[len(authornumber)/2-1]+authornumber[len(authornumber)/2])/2
     else:
-        midian=authornumber[(len(authornumber)-1)/2]
+        midian=authornumber[(len(authornumber)-1)/2-1]
     for k,v in sorted(g.degree().items(),key=lambda x:x[1],reverse=True)[0:3]:
         coauthornumber.append({"author":k,"coauthornum":v})
-    return articlenumber,means,mode,midian,coauthornumber
+    return articlenumber,means,mode,midian,coauthornumber,variance
 
 
 class MainPage(webapp2.RequestHandler):
 
 
     def get(self):    
-        params={"words":"","json":"","searchresult":"","articlenumber":"","means":"","mode":"","midian":"","coauthornumber":""}
+        graph=nx.Graph()
+        graph.add_node("A",viz={"size":10})
+        graph.add_node("B",viz={"size":8})
+        graph.add_node("C",viz={"size":5})
+        graph.add_node("D",viz={"size":14})
+        graph.add_edge("A","B",weight=2)
+        graph.add_edge("D","B",weight=1)
+        graph.add_edge("A","C",weight=4)
+        graph.add_edge("A","D",weight=3)
+        jsondata=json_graph.node_link_data(graph)
+        jsondata=json.dumps(jsondata,ensure_ascii=False)
+        params={"words":"","searchresult":"","articlenumber":"","means":"","mode":"","midian":"","coauthornumber":"","json":jsondata}
         fpath = os.path.join(os.path.dirname(__file__),'index.html')
         html = template.render(fpath,params)
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(html)
     def post(self):
         query=self.request.get("words").encode("utf-8")
-        data=cinii_export(cinii_search(query,result=[]))
+        result,search_url=cinii_search(query,result=[])
+        data=cinii_export(result)
         g,title,authornumber,wd=cinii_network(data)
-        articlenumber,means,mode,midian,coauthornumber=networkanalysis(g,authornumber,wd)
+        articlenumber,means,mode,midian,coauthornumber,variance=networkanalysis(g,authornumber,wd)
+        subg=nx.connected_component_subgraphs(g)
+        clique=len(subg)
+        maxclique=len(subg[0])
         for i in g.nodes():
-            if (len(g.edge[i])<2 and g.node[i]["viz"]["size"]<2):
+            if (len(g.edge[i])<1 and g.node[i]["viz"]["size"]<2):
                 g.remove_node(i)
         jsondata = json_graph.node_link_data(g)
         jsondata=json.dumps(jsondata,ensure_ascii=False)
-        params = {"words":query,"json":jsondata,"searchresult":len(title),"articlenumber":articlenumber,"means":means,"mode":mode,"midian":midian,"coauthornumber":coauthornumber}
-        fpath = os.path.join(os.path.dirname(__file__),'index.html')
+        params = {"words":query,"json":jsondata,"searchresult":len(title),"articlenumber":articlenumber,"means":means,"mode":mode,"midian":midian,"coauthornumber":coauthornumber,"clique":clique,"maxclique":maxclique,"variance":variance,"search_url":search_url}
+        fpath = os.path.join(os.path.dirname(__file__),'result.html')
         html = template.render(fpath,params)
         self.response.headers['Content-Type'] = 'text/html'
         self.response.out.write(html)
